@@ -1,24 +1,44 @@
 pipeline {
     agent any
+
+    environment {
+        IMAGE = "dockers1:latest"
+    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/hmhbv/DockerS1.git'
+                checkout scm
+            }
+        }
+        stage('Cleanup old container') {
+            steps {
+                script {
+                    sh 'docker stop dockers1 || true'
+                    sh 'docker rm dockers1 || true'
+                }
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t my-nginx .'
+                    docker.build(env.IMAGE)
                 }
             }
         }
-        stage('Run Container') {
+        stage('Deploy Container') {
             steps {
                 script {
-                    sh 'docker run -d -p 8080:80 --name nginx-container my-nginx'
+                    docker.image(env.IMAGE).run('-d -p 8081:80 --name dockers1')
                 }
             }
         }
     }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
 }
+
